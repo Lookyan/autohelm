@@ -9,7 +9,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/dietsche/rfsnotify"
+	"github.com/fsnotify/fsevents"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/kubernetes"
 
@@ -27,7 +27,7 @@ var (
 	tillerNamespace = flag.String("tiller-namespace", "kube-system", "Tiller namespace")
 	del = flag.Bool("d", false, "Delete chart after autohelming (WIP)")
 	threshold = flag.Int("t", 5, "Seconds to wait for rebuild")
-	imageTagName = flag.String("image-tag-name", "latest", "Name of image tag variable in helm chart")
+	imageTagName = flag.String("image-tag-name", "imageTag", "Name of image tag variable in helm chart")
 
 	attach = flag.Bool("attach", false, "Auto attach")
 	deploymentName = flag.String("deploy", "", "Deployment name for attach")
@@ -176,38 +176,39 @@ func main() {
 		panic(err.Error())
 	}
 
-	//Redeploy(clientset)
+	Redeploy(clientset)
 
-	watcher, err := rfsnotify.NewWatcher()
-
+	wd , _ := os.Getwd()
+	dev, err := fsevents.DeviceForPath(wd)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to retrieve device for path: %v", err)
 	}
 
-	defer watcher.Close()
+	fsevents.EventIDForDeviceBeforeTime(dev, time.Now())
+
+	es := &fsevents.EventStream{
+		Paths:   []string{wd},
+		Latency: 500 * time.Millisecond,
+		Device:  dev,
+		Flags:   fsevents.FileEvents | fsevents.WatchRoot}
+	es.Start()
+	ec := es.Events
+
+	fmt.Println("\n\nListening ", wd)
 
 	done := make(chan bool)
 
 	go func() {
-		for {
-			select {
-			case _ = <-watcher.Events:
+		for msg := range ec {
+			for range msg {
 				fmt.Println("Changes!")
 				lastChangeTime = time.Now()
 				haveChanges = true
-			case err := <-watcher.Errors:
-				fmt.Println("error:", err)
 			}
 		}
 	}()
 
 	go PollReBuild(clientset)
 
-	wd , _ := os.Getwd()
-	fmt.Println("\n\nListening ", wd)
-	err = watcher.AddRecursive(wd)
-	if err != nil {
-		log.Fatal(err)
-	}
 	<-done
 }
