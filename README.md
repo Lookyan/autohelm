@@ -1,12 +1,15 @@
 # Autohelm
 
-Filesystem watcher and auto minikube deployer
+Filesystem watcher and auto minikube deployer for Mac OS
 
 ## Requirements
 
 minikube >= 0.14
+
 docker configured to dockerd in minikube
+
 kubectl configured to local minikube cluster
+
 
 ## Install
 
@@ -22,7 +25,7 @@ From your project root:
 Supported flags:
 
 ```
-kubeconfig - path to kube config (default to ~/.kube/config)
+kubeconfig - path to kube config (default ~/.kube/config)
 
 name - helm chart name
 helmdir - name of directory with main helm chart (it should be in root of your project)
@@ -42,7 +45,7 @@ container - container name to attach with
 
 Key features:
 
-- Watch to your project files
+- Watch your project files
 - Automatic docker image rebuild
 - Automatic helm deploy to your local minikube
 - Automatic attach to particular container in new deployment
