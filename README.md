@@ -13,7 +13,9 @@ kubectl configured to local minikube cluster
 
 ## Install
 
-```curl -O ```
+```bash
+curl -Lo autohelm https://github.com/Lookyan/autohelm/releases/download/v0.1-alpha/autohelm && chmod +x autohelm && sudo mv autohelm /usr/local/bin/
+```
 
 ## Usage
 
